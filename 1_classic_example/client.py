@@ -1,8 +1,9 @@
 import socket as my_socket
 
+port = 6666
 client_socket = my_socket.socket(my_socket.AF_INET, my_socket.SOCK_STREAM)
-client_socket.connect(('localhost', 1489))
-print('Connected to localhost,', 1489)
+client_socket.connect(('localhost', port))
+print('Connected to localhost,', port)
 
 counter = 0
 while counter < 3:
