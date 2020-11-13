@@ -27,11 +27,14 @@ def execute_server_logic(socket, active_connections):
         print(request.decode())
         response = 'Server: ' + request.decode()
         socket.send(response.encode())
+    else:
+        socket.close()
+        active_connections.pop(socket)
 
 
 def run_event_loop(server_socket, active_connections):
     while True:
-        ready_to_read, _, _ = my_select(to_monitor, [],[])
+        ready_to_read, _, _ = my_select(to_monitor, [], [])
 
         for socket in ready_to_read:
             if socket is server_socket:
