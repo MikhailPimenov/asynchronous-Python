@@ -3,48 +3,39 @@ from collections import deque as my_deque
 from select import select as my_select
 
 
-def initialize_server(port):
-    socket = my_socket.socket(my_socket.AF_INET, my_socket.SOCK_STREAM)
-    socket.setsockopt(my_socket.SOL_SOCKET, my_socket.SO_REUSEADDR, True)
-    socket.bind(('localhost', port))
-    socket.listen(5)
-
-    print('Server is running')
-    return socket
-
-
-def waiting_for_connections(server_socket, active_connections):
-    while True:
-        print('Before accept():')
-
-        yield ('read', server_socket)
-
-        client_socket, address = server_socket.accept()                             # read
-        print('Connection from', address)
-        tasks.append(execute_server_logic(client_socket, active_connections))
-        active_connections[client_socket] = address
-
-        execute_server_logic(client_socket, active_connections)
-
-
 def execute_server_logic(client_socket, active_connections):
     while True:
 
         yield ('read', client_socket)
 
-        request = client_socket.recv(64)                                            # read
+        request = client_socket.recv(64)  # read
 
         if request:
             print('Client', active_connections[client_socket], end=': ')
             print(request.decode())
             response = 'Server: ' + request.decode()
 
-            yield('write', client_socket)
+            yield ('write', client_socket)
 
-            client_socket.send(response.encode())                                   # write
+            client_socket.send(response.encode())  # write
+
         else:
             client_socket.close()
+            print('Client', active_connections[client_socket], 'disconnected')
+            active_connections.pop(client_socket)
             break
+
+
+def accept_connection(server_socket, active_connections):
+    while True:
+        yield ('read', server_socket)
+
+        client_socket, address = server_socket.accept()  # read
+
+        tasks.append(execute_server_logic(client_socket, active_connections))
+
+        print('Connection from', address)
+        active_connections[client_socket] = address
 
 
 def run_event_loop():
@@ -70,16 +61,24 @@ def run_event_loop():
             pass
 
 
-if __name__ == '__main__':
-    to_read = dict()
-    to_write = dict()
-    tasks = my_deque()
+def initialize_server(port):
+    socket = my_socket.socket(my_socket.AF_INET, my_socket.SOCK_STREAM)
+    socket.setsockopt(my_socket.SOL_SOCKET, my_socket.SO_REUSEADDR, True)
 
+    socket.bind(('localhost', port))
+    socket.listen(5)
+    print('Server is running')
+    return socket
+
+
+if __name__ == '__main__':
     server_port = 8888
     all_active_connections = dict()
-
     this_server_socket = initialize_server(server_port)
 
-    tasks.append(waiting_for_connections(this_server_socket, all_active_connections))
+    tasks = my_deque()
+    to_read = dict()
+    to_write = dict()
+    tasks.append(accept_connection(this_server_socket, all_active_connections))
 
     run_event_loop()
