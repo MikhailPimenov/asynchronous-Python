@@ -1,15 +1,23 @@
 import socket as my_socket
 
-client_socket = my_socket.socket(my_socket.AF_INET, my_socket.SOCK_STREAM)
-client_socket.connect(('localhost', 1489))
-print('Connected to localhost,', 1489)
+if __name__ == '__main__':
+    client_socket = my_socket.socket(my_socket.AF_INET, my_socket.SOCK_STREAM)
+    port = 8004
+    client_socket.connect(('localhost', port))
+    print(f'Connected to server localhost on port {port}:')
 
-counter = 0
-while counter < 3:
-    request = input()
-    client_socket.send(request.encode())
-    response = client_socket.recv(64)
-    if response:
-        print(response.decode())
-    counter += 1
-client_socket.close()
+    message_counter = 0
+    while message_counter < 5:
+        request = input()
+
+        client_socket.send(request.encode())
+
+        response = client_socket.recv(64)
+
+        if response:
+            print(f'Received from the server: {response.decode()}')
+
+        message_counter += 1
+
+    client_socket.close()
+    print('Connection is closed.')
